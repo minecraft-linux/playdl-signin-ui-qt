@@ -10,18 +10,24 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
     setWindowFlag(Qt::Dialog);
     resize(480, 640);
 
-    QStackedWidget* stacked = new QStackedWidget(this);
+    stacked = new QStackedWidget(this);
 
-    QWidget* loadingIndicatorCtr = new QWidget(stacked);
+    loadingIndicatorCtr = new QWidget(stacked);
     QVBoxLayout* layout = new QVBoxLayout(loadingIndicatorCtr);
     MaterialBusyIndicator* loadingIndicator = new MaterialBusyIndicator(loadingIndicatorCtr);
     loadingIndicator->setFixedSize(48, 48);
     layout->addWidget(loadingIndicator, 0, Qt::AlignCenter);
     stacked->addWidget(loadingIndicatorCtr);
 
-    QWebEngineView* webView = new QWebEngineView(stacked);
+    webView = new QWebEngineView(stacked);
+    connect(webView, &QWebEngineView::loadFinished, this, &LoginWindow::onPageLoaded);
     stacked->addWidget(webView);
     webView->setUrl(QUrl(DEFAULT_URL));
 
     setCentralWidget(stacked);
+}
+
+
+void LoginWindow::onPageLoaded(bool ok) {
+    stacked->setCurrentWidget(webView);
 }
