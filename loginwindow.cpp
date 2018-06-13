@@ -1,10 +1,13 @@
 #include "loginwindow.h"
+#include <QDebug>
 #include <QFile>
 #include <QStackedWidget>
 #include <QVBoxLayout>
 #include <QWebEngineView>
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
+#include <QWebEngineCookieStore>
+#include <QWebEngineProfile>
 #include <QWebChannel>
 #include "materialbusyindicator.h"
 
@@ -32,12 +35,18 @@ LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
 }
 
 void LoginWindow::setupWebBrowser() {
+    connect(webView, &QWebEngineView::urlChanged, this, &LoginWindow::onUrlChanged);
+
     injectWebScripts();
 
     QWebChannel* channel = new QWebChannel(webView);
     LoginWindowApi* api = new LoginWindowApi(this, webView);
     channel->registerObject(QStringLiteral("loginWindow"), api);
     webView->page()->setWebChannel(channel);
+
+    QWebEngineCookieStore* cookies = webView->page()->profile()->cookieStore();
+    cookies->connect(cookies, &QWebEngineCookieStore::cookieAdded, this, &LoginWindow::onCookieAdded);
+    cookies->deleteAllCookies();
 }
 
 void LoginWindow::injectWebScripts() {
@@ -60,6 +69,22 @@ void LoginWindow::injectWebScripts() {
     }
     script.setSourceCode(source);
     webView->page()->scripts().insert(script);
+}
+
+void LoginWindow::onUrlChanged(const QUrl &url) {
+    if (url.fragment() == "close") {
+        qDebug() << "Auth flow finished";
+        qDebug() << "Account" << accountIdentifier;
+        qDebug() << "Token" << accountToken;
+        qDebug() << "User ID" << accountUserId;
+    }
+}
+
+void LoginWindow::onCookieAdded(const QNetworkCookie &cookie) {
+    if (cookie.name() == "oauth_token")
+        accountToken = cookie.value();
+    else if (cookie.name() == "user_id")
+        accountUserId = cookie.value();
 }
 
 void LoginWindow::showWebBrowser() {

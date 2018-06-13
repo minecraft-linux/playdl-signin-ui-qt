@@ -17,5 +17,13 @@
         withConn(function(conn) {
             conn.objects.loginWindow.showWebBrowser();
         });
-    }
+    };
+    window.mm.setAccountIdentifier = function(identifer) {
+        withConn(function(conn) {
+            conn.objects.loginWindow.setAccountIdentifier(identifer);
+        });
+    };
+    window.mm.log = function(what) {
+        console.log(what);
+    };
 })();
