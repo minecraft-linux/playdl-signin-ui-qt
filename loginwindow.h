@@ -1,18 +1,18 @@
 #ifndef LOGINWINDOW_H
 #define LOGINWINDOW_H
 
-#include <QMainWindow>
+#include <QDialog>
 
-class QStackedWidget;
+class QStackedLayout;
 class QNetworkCookie;
 class QWebEngineView;
 
-class LoginWindow : public QMainWindow {
+class LoginWindow : public QDialog {
     Q_OBJECT
 private:
     static const char* const DEFAULT_URL;
 
-    QStackedWidget* stacked;
+    QStackedLayout* stacked;
     QWidget* loadingIndicatorCtr;
     QWebEngineView* webView;
     QString accountIdentifier;

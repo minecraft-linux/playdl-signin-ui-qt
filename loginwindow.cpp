@@ -1,7 +1,7 @@
 #include "loginwindow.h"
 #include <QDebug>
 #include <QFile>
-#include <QStackedWidget>
+#include <QStackedLayout>
 #include <QVBoxLayout>
 #include <QWebEngineView>
 #include <QWebEngineScript>
@@ -13,25 +13,25 @@
 
 const char* const LoginWindow::DEFAULT_URL = "https://accounts.google.com/embedded/setup/v2/android?source=com.android.settings&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&lang=en&langCountry=en_us&hl=en-US&cc=us";
 
-LoginWindow::LoginWindow(QWidget *parent) : QMainWindow(parent) {
+LoginWindow::LoginWindow(QWidget *parent) : QDialog(parent) {
     setWindowFlag(Qt::Dialog);
     resize(480, 640);
 
-    stacked = new QStackedWidget(this);
+    stacked = new QStackedLayout(this);
 
-    loadingIndicatorCtr = new QWidget(stacked);
+    loadingIndicatorCtr = new QWidget(this);
     QVBoxLayout* layout = new QVBoxLayout(loadingIndicatorCtr);
     MaterialBusyIndicator* loadingIndicator = new MaterialBusyIndicator(loadingIndicatorCtr);
     loadingIndicator->setFixedSize(48, 48);
     layout->addWidget(loadingIndicator, 0, Qt::AlignCenter);
     stacked->addWidget(loadingIndicatorCtr);
 
-    webView = new QWebEngineView(stacked);
+    webView = new QWebEngineView(this);
     stacked->addWidget(webView);
     setupWebBrowser();
     webView->setUrl(QUrl(DEFAULT_URL));
 
-    setCentralWidget(stacked);
+    setLayout(stacked);
 }
 
 void LoginWindow::setupWebBrowser() {
