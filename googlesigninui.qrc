@@ -1,5 +1,5 @@
 <RCC>
     <qresource prefix="/">
-        <file>injectjs.js</file>
+        <file>src/injectjs.js</file>
     </qresource>
 </RCC>

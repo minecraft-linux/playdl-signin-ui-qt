@@ -7,7 +7,7 @@ class QStackedLayout;
 class QNetworkCookie;
 class QWebEngineView;
 
-class LoginWindow : public QDialog {
+class GoogleLoginWindow : public QDialog {
     Q_OBJECT
 private:
     static const char* const DEFAULT_URL;
@@ -23,7 +23,7 @@ private:
     void injectWebScripts();
 
 public:
-    explicit LoginWindow(QWidget *parent = nullptr);
+    explicit GoogleLoginWindow(QWidget *parent = nullptr);
 
     void showWebBrowser();
     void setAccountIdentifier(const QString& identifier) { accountIdentifier = identifier; }
@@ -32,14 +32,14 @@ public:
     void onCookieAdded(const QNetworkCookie &cookie);
 };
 
-class LoginWindowApi : public QObject {
+class GoogleLoginWindowApi : public QObject {
     Q_OBJECT
 
 private:
-    LoginWindow* window;
+    GoogleLoginWindow* window;
 
 public:
-    LoginWindowApi(LoginWindow* window, QObject *parent) : QObject(parent), window(window) {}
+    GoogleLoginWindowApi(GoogleLoginWindow* window, QObject *parent) : QObject(parent), window(window) {}
 
 public slots:
     void showWebBrowser() { window->showWebBrowser(); }

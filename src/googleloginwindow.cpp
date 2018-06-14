@@ -1,4 +1,4 @@
-#include "loginwindow.h"
+#include <googleloginwindow.h>
 #include <QDebug>
 #include <QFile>
 #include <QStackedLayout>
@@ -11,9 +11,9 @@
 #include <QWebChannel>
 #include "materialbusyindicator.h"
 
-const char* const LoginWindow::DEFAULT_URL = "https://accounts.google.com/embedded/setup/v2/android?source=com.android.settings&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&lang=en&langCountry=en_us&hl=en-US&cc=us";
+const char* const GoogleLoginWindow::DEFAULT_URL = "https://accounts.google.com/embedded/setup/v2/android?source=com.android.settings&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&lang=en&langCountry=en_us&hl=en-US&cc=us";
 
-LoginWindow::LoginWindow(QWidget *parent) : QDialog(parent) {
+GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
     setWindowFlag(Qt::Dialog);
     resize(480, 640);
 
@@ -34,22 +34,22 @@ LoginWindow::LoginWindow(QWidget *parent) : QDialog(parent) {
     setLayout(stacked);
 }
 
-void LoginWindow::setupWebBrowser() {
-    connect(webView, &QWebEngineView::urlChanged, this, &LoginWindow::onUrlChanged);
+void GoogleLoginWindow::setupWebBrowser() {
+    connect(webView, &QWebEngineView::urlChanged, this, &GoogleLoginWindow::onUrlChanged);
 
     injectWebScripts();
 
     QWebChannel* channel = new QWebChannel(webView);
-    LoginWindowApi* api = new LoginWindowApi(this, webView);
+    GoogleLoginWindowApi* api = new GoogleLoginWindowApi(this, webView);
     channel->registerObject(QStringLiteral("loginWindow"), api);
     webView->page()->setWebChannel(channel);
 
     QWebEngineCookieStore* cookies = webView->page()->profile()->cookieStore();
-    cookies->connect(cookies, &QWebEngineCookieStore::cookieAdded, this, &LoginWindow::onCookieAdded);
+    cookies->connect(cookies, &QWebEngineCookieStore::cookieAdded, this, &GoogleLoginWindow::onCookieAdded);
     cookies->deleteAllCookies();
 }
 
-void LoginWindow::injectWebScripts() {
+void GoogleLoginWindow::injectWebScripts() {
     QWebEngineScript script;
     script.setInjectionPoint(QWebEngineScript::DocumentCreation);
     script.setWorldId(QWebEngineScript::MainWorld);
@@ -63,7 +63,7 @@ void LoginWindow::injectWebScripts() {
     }
     {
         QFile file;
-        file.setFileName(":/injectjs.js");
+        file.setFileName(":/src/injectjs.js");
         file.open(QIODevice::ReadOnly);
         source += file.readAll();
     }
@@ -71,7 +71,7 @@ void LoginWindow::injectWebScripts() {
     webView->page()->scripts().insert(script);
 }
 
-void LoginWindow::onUrlChanged(const QUrl &url) {
+void GoogleLoginWindow::onUrlChanged(const QUrl &url) {
     if (url.fragment() == "close") {
         qDebug() << "Auth flow finished";
         qDebug() << "Account" << accountIdentifier;
@@ -80,13 +80,13 @@ void LoginWindow::onUrlChanged(const QUrl &url) {
     }
 }
 
-void LoginWindow::onCookieAdded(const QNetworkCookie &cookie) {
+void GoogleLoginWindow::onCookieAdded(const QNetworkCookie &cookie) {
     if (cookie.name() == "oauth_token")
         accountToken = cookie.value();
     else if (cookie.name() == "user_id")
         accountUserId = cookie.value();
 }
 
-void LoginWindow::showWebBrowser() {
+void GoogleLoginWindow::showWebBrowser() {
     stacked->setCurrentWidget(webView);
 }
