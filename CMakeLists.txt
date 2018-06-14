@@ -10,6 +10,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 find_package(Qt5 COMPONENTS Core Widgets WebEngineWidgets REQUIRED)
 
-add_executable(${PROJECT_NAME} main.cpp loginwindow.cpp loginwindow.h materialbusyindicator.cpp materialbusyindicator.h resources.qrc)
+add_library(playdl-signin-ui-qt-lib loginwindow.cpp loginwindow.h materialbusyindicator.cpp materialbusyindicator.h googlesigninui.qrc)
+target_link_libraries(playdl-signin-ui-qt-lib PUBLIC Qt5::Core Qt5::Widgets Qt5::WebEngineWidgets)
 
-target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets Qt5::WebEngineWidgets)
+add_executable(${PROJECT_NAME} main.cpp)
+target_link_libraries(${PROJECT_NAME} Qt5::Core Qt5::Widgets Qt5::WebEngineWidgets playdl-signin-ui-qt-lib)
