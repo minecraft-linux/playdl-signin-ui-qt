@@ -15,9 +15,9 @@ private:
     QStackedLayout* stacked;
     QWidget* loadingIndicatorCtr;
     QWebEngineView* webView;
-    QString accountIdentifier;
-    QString accountUserId;
-    QString accountToken;
+    QString pAccountIdentifier;
+    QString pAccountUserId;
+    QString pAccountToken;
 
     void setupWebBrowser();
     void injectWebScripts();
@@ -26,7 +26,12 @@ public:
     explicit GoogleLoginWindow(QWidget *parent = nullptr);
 
     void showWebBrowser();
-    void setAccountIdentifier(const QString& identifier) { accountIdentifier = identifier; }
+
+    QString const& accountIdentifier() const { return pAccountIdentifier; }
+    QString const& accountUserId() const { return pAccountUserId; }
+    QString const& accountToken() const { return pAccountToken; }
+
+    void setAccountIdentifier(const QString& identifier) { pAccountIdentifier = identifier; }
 
     void onUrlChanged(const QUrl &url);
     void onCookieAdded(const QNetworkCookie &cookie);

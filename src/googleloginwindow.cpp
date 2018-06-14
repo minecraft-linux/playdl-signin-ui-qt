@@ -72,19 +72,15 @@ void GoogleLoginWindow::injectWebScripts() {
 }
 
 void GoogleLoginWindow::onUrlChanged(const QUrl &url) {
-    if (url.fragment() == "close") {
-        qDebug() << "Auth flow finished";
-        qDebug() << "Account" << accountIdentifier;
-        qDebug() << "Token" << accountToken;
-        qDebug() << "User ID" << accountUserId;
-    }
+    if (url.fragment() == "close")
+        accept();
 }
 
 void GoogleLoginWindow::onCookieAdded(const QNetworkCookie &cookie) {
     if (cookie.name() == "oauth_token")
-        accountToken = cookie.value();
+        pAccountToken = cookie.value();
     else if (cookie.name() == "user_id")
-        accountUserId = cookie.value();
+        pAccountUserId = cookie.value();
 }
 
 void GoogleLoginWindow::showWebBrowser() {
