@@ -1,6 +1,6 @@
 #include "materialbusyindicator.h"
 
-#include <QtGlobal>>
+#include <QtGlobal>
 #include <QPainter>
 
 MaterialBusyIndicator::MaterialBusyIndicator(QWidget *parent) : QWidget(parent) {
