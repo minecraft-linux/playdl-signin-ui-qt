@@ -15,6 +15,7 @@ const char* const GoogleLoginWindow::DEFAULT_URL = "https://accounts.google.com/
 
 GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
     setWindowFlag(Qt::Dialog);
+    setWindowTitle("Google Sign-In");
     resize(480, 640);
 
     stacked = new QStackedLayout(this);
