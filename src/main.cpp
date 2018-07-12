@@ -1,5 +1,5 @@
 #include <QApplication>
-#include <QTextStream>>
+#include <QTextStream>
 #include <googleloginwindow.h>
 
 int main(int argc, char *argv[]) {
