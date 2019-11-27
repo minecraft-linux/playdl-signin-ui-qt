@@ -46,8 +46,12 @@ void GoogleLoginWindow::setupWebBrowser() {
     webView->page()->setWebChannel(channel);
 
     QWebEngineCookieStore* cookies = webView->page()->profile()->cookieStore();
+
     cookies->connect(cookies, &QWebEngineCookieStore::cookieAdded, this, &GoogleLoginWindow::onCookieAdded);
     cookies->deleteAllCookies();
+
+    webView->page()->profile()->setHttpUserAgent("Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36");
+
 }
 
 void GoogleLoginWindow::injectWebScripts() {
