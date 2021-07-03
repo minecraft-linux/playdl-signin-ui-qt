@@ -66,14 +66,24 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
         layout->addWidget(ignoreCert);
         stacked->addWidget(certErrorPage);
     }
-    webView = new QWebEngineView(this);
+    {
+        webviewPage = new QWidget(this);
+        QVBoxLayout *layout = new QVBoxLayout(webviewPage);
+        webView = new QWebEngineView(this);
+        auto label = new QLabel(tr("Warning: This Launcher is not Google Play Certified. Google only permits this launcher to login with a Samsung Galaxy S8 user agent, your credentials aren't send to such a device. This Launcher stores your Google Play access token unencrypted on your disk. Make shure to accept the Google Terms of Service (TOS) Window showing after your login."), this);
+        label->setWordWrap(true);
+        layout->addWidget(label);
+        layout->setStretchFactor(label, 0);
+        layout->addWidget(webView);
+        layout->setStretchFactor(webView, 1);
+    }
     auto webPage = new WebPage(this);
     connect(webPage, &WebPage::verifyCertificateError, this, [this](QString url, QString errormsg) {
         this->certificateError = true;
         return this->ignoreCertificateError;
     });
     webView->setPage(webPage);
-    stacked->addWidget(webView);
+    stacked->addWidget(webviewPage);
     setupWebBrowser();
     webView->setUrl(QUrl(DEFAULT_URL));
 
@@ -141,7 +151,7 @@ void GoogleLoginWindow::onCookieAdded(const QNetworkCookie &cookie) {
 }
 
 void GoogleLoginWindow::showWebBrowser() {
-    stacked->setCurrentWidget(webView);
+    stacked->setCurrentWidget(webviewPage);
 }
 
 bool WebPage::certificateError(const QWebEngineCertificateError& err) {

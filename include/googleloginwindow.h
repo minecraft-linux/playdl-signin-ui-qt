@@ -19,6 +19,7 @@ private:
     QWebEngineView* webView;
     QWidget* failedLoadingPage;
     QWidget* certErrorPage;
+    QWidget* webviewPage;
     QString pAccountIdentifier;
     QString pAccountUserId;
     QString pAccountToken;
