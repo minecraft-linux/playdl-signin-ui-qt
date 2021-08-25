@@ -12,6 +12,7 @@
 #include <QLabel>
 #include <QDesktopServices>
 #include <QPushButton>
+#include <QWebEngineCertificateError>
 #include "materialbusyindicator.h"
 
 const char* const GoogleLoginWindow::DEFAULT_URL = "https://accounts.google.com/embedded/setup/v2/android?source=com.android.settings&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&lang=en&langCountry=en_us&hl=en-US&cc=us";
@@ -155,5 +156,5 @@ void GoogleLoginWindow::showWebBrowser() {
 }
 
 bool WebPage::certificateError(const QWebEngineCertificateError& err) {
-    return emit verifyCertificateError(err.url().toString(), err.errorDescription());
+    return emit verifyCertificateError(err.url().toString(), err.description());
 }
