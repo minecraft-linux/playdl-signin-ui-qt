@@ -70,7 +70,7 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
         webviewPage = new QWidget(this);
         QVBoxLayout *layout = new QVBoxLayout(webviewPage);
         webView = new QWebEngineView(this);
-        auto label = new QLabel(tr("Information about Security: Google identifies this Launcher as a Samsung Galaxy S8, your credentials aren't send to such a device. This Launcher is not Google Play Certified. This Launcher stores your Google Play access token unencrypted on your disk."), this);
+        auto label = new QLabel(tr("Information about Security: This Launcher is not Google Play Certified. This Launcher stores your Google Play access token unencrypted on your disk."), this);
         label->setWordWrap(true);
         layout->addWidget(label);
         layout->setStretchFactor(label, 0);
@@ -105,9 +105,6 @@ void GoogleLoginWindow::setupWebBrowser() {
 
     cookies->connect(cookies, &QWebEngineCookieStore::cookieAdded, this, &GoogleLoginWindow::onCookieAdded);
     cookies->deleteAllCookies();
-
-    webView->page()->profile()->setHttpUserAgent("Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36");
-
 }
 
 void GoogleLoginWindow::injectWebScripts() {
