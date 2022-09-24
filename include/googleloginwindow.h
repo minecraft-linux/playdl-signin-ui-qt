@@ -2,8 +2,10 @@
 #define LOGINWINDOW_H
 
 #include <QDialog>
+#ifndef WITHOUT_WEBENGINE
 #include <QWebEnginePage>
 #include <QWebEngineCertificateError>
+#endif
 
 class QStackedLayout;
 class QNetworkCookie;
@@ -16,18 +18,27 @@ private:
 
     QStackedLayout* stacked;
     QWidget* loadingIndicatorCtr;
-    QWebEngineView* webView;
     QWidget* failedLoadingPage;
     QWidget* certErrorPage;
     QWidget* webviewPage;
+    QWidget* manualLoginPage;
     QString pAccountIdentifier;
     QString pAccountUserId;
     QString pAccountToken;
     bool certificateError = false;
     bool ignoreCertificateError = false;
+#ifndef WITHOUT_WEBENGINE
+    QWebEngineView* webView;
+#else
+    void* webView;
+#endif
 
     void setupWebBrowser();
     void injectWebScripts();
+
+    void onUrlChanged(const QUrl &url);
+    void onLoadFinished(bool ok);
+    void onCookieAdded(const QNetworkCookie &cookie);
 
 public:
     explicit GoogleLoginWindow(QWidget *parent = nullptr);
@@ -39,10 +50,6 @@ public:
     QString const& accountToken() const { return pAccountToken; }
 
     void setAccountIdentifier(const QString& identifier) { pAccountIdentifier = identifier; }
-
-    void onUrlChanged(const QUrl &url);
-    void onLoadFinished(bool ok);
-    void onCookieAdded(const QNetworkCookie &cookie);
 };
 
 class GoogleLoginWindowApi : public QObject {
@@ -60,6 +67,7 @@ public slots:
 
 };
 
+#ifndef WITHOUT_WEBENGINE
 class WebPage : public QWebEnginePage {
     Q_OBJECT
 public:
@@ -69,5 +77,6 @@ signals:
 protected:
     bool certificateError(const QWebEngineCertificateError& err);
 };
+#endif
 
 #endif // LOGINWINDOW_H

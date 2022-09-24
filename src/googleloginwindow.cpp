@@ -3,16 +3,19 @@
 #include <QFile>
 #include <QStackedLayout>
 #include <QVBoxLayout>
+#include <QLineEdit>
+#ifndef WITHOUT_WEBENGINE
 #include <QWebEngineView>
 #include <QWebEngineScript>
 #include <QWebEngineScriptCollection>
 #include <QWebEngineCookieStore>
 #include <QWebEngineProfile>
 #include <QWebChannel>
+#include <QWebEngineCertificateError>
+#endif
 #include <QLabel>
 #include <QDesktopServices>
 #include <QPushButton>
-#include <QWebEngineCertificateError>
 #include "materialbusyindicator.h"
 
 const char* const GoogleLoginWindow::DEFAULT_URL = "https://accounts.google.com/embedded/setup/v2/android?source=com.android.settings&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&lang=en&langCountry=en_us&hl=en-US&cc=us";
@@ -28,9 +31,43 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
     QVBoxLayout* layout = new QVBoxLayout(loadingIndicatorCtr);
     MaterialBusyIndicator* loadingIndicator = new MaterialBusyIndicator(loadingIndicatorCtr);
     loadingIndicator->setFixedSize(48, 48);
+    auto manualLogin = new QPushButton("Manual login", this);
+    connect(manualLogin, &QPushButton::clicked, this, [this]() {
+        this->stacked->setCurrentWidget(this->manualLoginPage);
+    });
+    layout->addWidget(manualLogin);
     layout->addWidget(loadingIndicator, 0, Qt::AlignCenter);
     stacked->addWidget(loadingIndicatorCtr);
     
+    {
+        manualLoginPage = new QWidget(this);
+        QVBoxLayout *layout = new QVBoxLayout(manualLoginPage);
+        auto label = new QLabel(tr("You can use the debugging tools of your Firefox or Chromium to login manually.\nOpen %1 in your Webbrowser").arg(DEFAULT_URL), this);
+        label->setTextInteractionFlags(Qt::TextSelectableByMouse);
+        label->setWordWrap(true);
+        layout->addWidget(label);
+        layout->setStretchFactor(label, 0);
+        layout->addWidget(new QLabel("email used during login", this));
+        auto emailField = new QLineEdit(this);
+        layout->addWidget(emailField);
+        layout->addWidget(new QLabel("Value of \"oauth_token\" Cookie after login", this));
+        auto oauthTokenField = new QLineEdit(this);
+        layout->addWidget(oauthTokenField);
+        layout->addWidget(new QLabel("Value of \"user_id\" Cookie after login", this));
+        auto userIdField = new QLineEdit(this);
+        layout->addWidget(userIdField);
+        auto login = new QPushButton("Login");
+        connect(login, &QPushButton::clicked, this, [=]() {
+            pAccountToken = oauthTokenField->text();
+            pAccountUserId = userIdField->text();
+            setAccountIdentifier(emailField->text());
+            accept();
+        });
+        layout->addWidget(login);
+        stacked->addWidget(manualLoginPage);
+    }
+
+#ifndef WITHOUT_WEBENGINE
     {
         auto label = new QLabel(tr("Failed to load the <a href=\"%1\">Google login Page</a>, please check your Internet connection.").arg(GoogleLoginWindow::DEFAULT_URL), this);
         label->setWordWrap(true);
@@ -40,12 +77,17 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
         failedLoadingPage = new QWidget(this);
         QVBoxLayout *layout = new QVBoxLayout(failedLoadingPage);
         layout->addWidget(label);
-        auto tryagain = new QPushButton("Try again");
+        auto tryagain = new QPushButton("Try again", this);
         connect(tryagain, &QPushButton::clicked, this, [this]() {
             this->stacked->setCurrentWidget(this->loadingIndicatorCtr);
             this->webView->setUrl(QUrl(GoogleLoginWindow::DEFAULT_URL));
         });
         layout->addWidget(tryagain);
+        auto manualLogin = new QPushButton("Manual login", this);
+        connect(manualLogin, &QPushButton::clicked, this, [this]() {
+            this->stacked->setCurrentWidget(this->manualLoginPage);
+        });
+        layout->addWidget(manualLogin);
         stacked->addWidget(failedLoadingPage);
     }
     {
@@ -65,16 +107,26 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
             this->webView->setUrl(QUrl(GoogleLoginWindow::DEFAULT_URL));
         });
         layout->addWidget(ignoreCert);
+        auto manualLogin = new QPushButton("Manual login", this);
+        connect(manualLogin, &QPushButton::clicked, this, [this]() {
+            this->stacked->setCurrentWidget(this->manualLoginPage);
+        });
+        layout->addWidget(manualLogin);
         stacked->addWidget(certErrorPage);
     }
     {
         webviewPage = new QWidget(this);
         QVBoxLayout *layout = new QVBoxLayout(webviewPage);
         webView = new QWebEngineView(this);
-        auto label = new QLabel(tr("Information about Security: Google identifies this Launcher as a Samsung Galaxy S8, your credentials aren't send to such a device. This Launcher is not Google Play Certified. This Launcher stores your Google Play access token unencrypted on your disk."), this);
+        auto label = new QLabel(tr("Information about Security: This Launcher is not Google Play Certified and never will be supported by Google. This Launcher stores your Google Play access token unencrypted on your disk."), this);
         label->setWordWrap(true);
         layout->addWidget(label);
         layout->setStretchFactor(label, 0);
+        auto manualLogin = new QPushButton("Manual login", this);
+        connect(manualLogin, &QPushButton::clicked, this, [this]() {
+            this->stacked->setCurrentWidget(this->manualLoginPage);
+        });
+        layout->addWidget(manualLogin);
         layout->addWidget(webView);
         layout->setStretchFactor(webView, 1);
     }
@@ -87,10 +139,14 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
     stacked->addWidget(webviewPage);
     setupWebBrowser();
     webView->setUrl(QUrl(DEFAULT_URL));
+#else
+    stacked->setCurrentWidget(this->manualLoginPage);
+#endif
 
     setLayout(stacked);
 }
 
+#ifndef WITHOUT_WEBENGINE
 void GoogleLoginWindow::setupWebBrowser() {
     connect(webView, &QWebEngineView::urlChanged, this, &GoogleLoginWindow::onUrlChanged);
     connect(webView, &QWebEngineView::loadFinished, this, &GoogleLoginWindow::onLoadFinished);
@@ -106,9 +162,6 @@ void GoogleLoginWindow::setupWebBrowser() {
 
     cookies->connect(cookies, &QWebEngineCookieStore::cookieAdded, this, &GoogleLoginWindow::onCookieAdded);
     cookies->deleteAllCookies();
-
-    webView->page()->profile()->setHttpUserAgent("Mozilla/5.0 (Linux; Android 7.0; SM-G892A Build/NRD90M; wv) AppleWebKit/537.36 (KHTML, like Gecko) Version/4.0 Chrome/60.0.3112.107 Mobile Safari/537.36");
-
 }
 
 void GoogleLoginWindow::injectWebScripts() {
@@ -150,11 +203,14 @@ void GoogleLoginWindow::onCookieAdded(const QNetworkCookie &cookie) {
     else if (cookie.name() == "user_id")
         pAccountUserId = cookie.value();
 }
+#endif
 
 void GoogleLoginWindow::showWebBrowser() {
     stacked->setCurrentWidget(webviewPage);
 }
 
+#ifndef WITHOUT_WEBENGINE
 bool WebPage::certificateError(const QWebEngineCertificateError& err) {
     return emit verifyCertificateError(err.url().toString(), err.description());
 }
+#endif
