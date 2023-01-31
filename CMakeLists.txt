@@ -9,7 +9,7 @@ set(CMAKE_CXX_STANDARD 11)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 option(USE_WEBENGINE "Use the QT Webengine for the google sign in" ON)
 
-find_package(Qt6 COMPONENTS Core Widgets WebEngineWidgets REQUIRED)
+find_package(Qt6 COMPONENTS Core Widgets REQUIRED)
 add_library(playdl-signin-ui-qt-lib src/googleloginwindow.cpp include/googleloginwindow.h src/materialbusyindicator.cpp src/materialbusyindicator.h googlesigninui.qrc)
 if(USE_WEBENGINE)
 find_package(Qt6 COMPONENTS WebEngineWidgets REQUIRED)
