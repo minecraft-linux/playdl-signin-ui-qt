@@ -140,7 +140,7 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
             layout->addWidget(webView);
             layout->setStretchFactor(webView, 1);
         }
-        auto webPage = new WebPage(this);
+        auto webPage = new WebPage(webView);
         connect(webPage, &WebPage::verifyCertificateError, this, [this](QString url, QString errormsg) {
             this->certificateError = true;
             return this->ignoreCertificateError;
