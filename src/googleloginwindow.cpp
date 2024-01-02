@@ -20,6 +20,15 @@
 
 const char* const GoogleLoginWindow::DEFAULT_URL = "https://accounts.google.com/embedded/setup/v2/android?source=com.android.settings&xoauth_display_name=Android%20Phone&canFrp=1&canSk=1&lang=en&langCountry=en_us&hl=en-US&cc=us";
 
+static bool ReadEnvFlag(const char* name, bool def = false) {
+    auto val = getenv(name);
+    if(!val) {
+        return def;
+    }
+    std::string sval = val;
+    return sval == "true" || sval == "1" || sval == "on";
+}
+
 GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
     setWindowFlag(Qt::Dialog);
     setWindowTitle("Google Sign-In");
@@ -68,77 +77,81 @@ GoogleLoginWindow::GoogleLoginWindow(QWidget *parent) : QDialog(parent) {
     }
 
 #ifndef WITHOUT_WEBENGINE
-    {
-        auto label = new QLabel(tr("Failed to load the <a href=\"%1\">Google login Page</a>, please check your Internet connection.").arg(GoogleLoginWindow::DEFAULT_URL), this);
-        label->setWordWrap(true);
-        connect(label, &QLabel::linkActivated, this, [](QString link) {
-            QDesktopServices::openUrl(QUrl(link));
+    if(ReadEnvFlag("USE_WEBENGINE", true)) {
+        {
+            auto label = new QLabel(tr("Failed to load the <a href=\"%1\">Google login Page</a>, please check your Internet connection.").arg(GoogleLoginWindow::DEFAULT_URL), this);
+            label->setWordWrap(true);
+            connect(label, &QLabel::linkActivated, this, [](QString link) {
+                QDesktopServices::openUrl(QUrl(link));
+            });
+            failedLoadingPage = new QWidget(this);
+            QVBoxLayout *layout = new QVBoxLayout(failedLoadingPage);
+            layout->addWidget(label);
+            auto tryagain = new QPushButton("Try again", this);
+            connect(tryagain, &QPushButton::clicked, this, [this]() {
+                this->stacked->setCurrentWidget(this->loadingIndicatorCtr);
+                this->webView->setUrl(QUrl(GoogleLoginWindow::DEFAULT_URL));
+            });
+            layout->addWidget(tryagain);
+            auto manualLogin = new QPushButton("Manual login", this);
+            connect(manualLogin, &QPushButton::clicked, this, [this]() {
+                this->stacked->setCurrentWidget(this->manualLoginPage);
+            });
+            layout->addWidget(manualLogin);
+            stacked->addWidget(failedLoadingPage);
+        }
+        {
+            auto label = new QLabel(tr("Warning this Launcher ( qtwebengine ) cannot verify the certificate of the <a href=\"%1\">Google login Page</a>.<br/>It is insecure to connect and providing credentials to a possible hijacked login page.<br/>Otherwise your certificate store may be outdated or incompatible with this Launcher release.").arg(GoogleLoginWindow::DEFAULT_URL), this);
+            label->setWordWrap(true);
+            connect(label, &QLabel::linkActivated, this, [](QString link) {
+                QDesktopServices::openUrl(QUrl(link));
+            });
+            certErrorPage = new QWidget(this);
+            QVBoxLayout *layout = new QVBoxLayout(certErrorPage);
+            layout->addWidget(label);
+            auto ignoreCert = new QPushButton(tr("Go ahead and ignore this error at your own risk"));
+            connect(ignoreCert, &QPushButton::clicked, this, [this]() {
+                this->certificateError = false;
+                this->ignoreCertificateError = true;
+                this->stacked->setCurrentWidget(this->loadingIndicatorCtr);
+                this->webView->setUrl(QUrl(GoogleLoginWindow::DEFAULT_URL));
+            });
+            layout->addWidget(ignoreCert);
+            auto manualLogin = new QPushButton("Manual login", this);
+            connect(manualLogin, &QPushButton::clicked, this, [this]() {
+                this->stacked->setCurrentWidget(this->manualLoginPage);
+            });
+            layout->addWidget(manualLogin);
+            stacked->addWidget(certErrorPage);
+        }
+        {
+            webviewPage = new QWidget(this);
+            QVBoxLayout *layout = new QVBoxLayout(webviewPage);
+            webView = new QWebEngineView(this);
+            auto label = new QLabel(tr("Information about Security: This Launcher is not Google Play Certified and never will be supported by Google. This Launcher stores your Google Play access token unencrypted on your disk."), this);
+            label->setWordWrap(true);
+            layout->addWidget(label);
+            layout->setStretchFactor(label, 0);
+            auto manualLogin = new QPushButton("Manual login", this);
+            connect(manualLogin, &QPushButton::clicked, this, [this]() {
+                this->stacked->setCurrentWidget(this->manualLoginPage);
+            });
+            layout->addWidget(manualLogin);
+            layout->addWidget(webView);
+            layout->setStretchFactor(webView, 1);
+        }
+        auto webPage = new WebPage(this);
+        connect(webPage, &WebPage::verifyCertificateError, this, [this](QString url, QString errormsg) {
+            this->certificateError = true;
+            return this->ignoreCertificateError;
         });
-        failedLoadingPage = new QWidget(this);
-        QVBoxLayout *layout = new QVBoxLayout(failedLoadingPage);
-        layout->addWidget(label);
-        auto tryagain = new QPushButton("Try again", this);
-        connect(tryagain, &QPushButton::clicked, this, [this]() {
-            this->stacked->setCurrentWidget(this->loadingIndicatorCtr);
-            this->webView->setUrl(QUrl(GoogleLoginWindow::DEFAULT_URL));
-        });
-        layout->addWidget(tryagain);
-        auto manualLogin = new QPushButton("Manual login", this);
-        connect(manualLogin, &QPushButton::clicked, this, [this]() {
-            this->stacked->setCurrentWidget(this->manualLoginPage);
-        });
-        layout->addWidget(manualLogin);
-        stacked->addWidget(failedLoadingPage);
+        webView->setPage(webPage);
+        stacked->addWidget(webviewPage);
+        setupWebBrowser();
+        webView->setUrl(QUrl(DEFAULT_URL));
+    } else {
+        stacked->setCurrentWidget(this->manualLoginPage);
     }
-    {
-        auto label = new QLabel(tr("Warning this Launcher ( qtwebengine ) cannot verify the certificate of the <a href=\"%1\">Google login Page</a>.<br/>It is insecure to connect and providing credentials to a possible hijacked login page.<br/>Otherwise your certificate store may be outdated or incompatible with this Launcher release.").arg(GoogleLoginWindow::DEFAULT_URL), this);
-        label->setWordWrap(true);
-        connect(label, &QLabel::linkActivated, this, [](QString link) {
-            QDesktopServices::openUrl(QUrl(link));
-        });
-        certErrorPage = new QWidget(this);
-        QVBoxLayout *layout = new QVBoxLayout(certErrorPage);
-        layout->addWidget(label);
-        auto ignoreCert = new QPushButton(tr("Go ahead and ignore this error at your own risk"));
-        connect(ignoreCert, &QPushButton::clicked, this, [this]() {
-            this->certificateError = false;
-            this->ignoreCertificateError = true;
-            this->stacked->setCurrentWidget(this->loadingIndicatorCtr);
-            this->webView->setUrl(QUrl(GoogleLoginWindow::DEFAULT_URL));
-        });
-        layout->addWidget(ignoreCert);
-        auto manualLogin = new QPushButton("Manual login", this);
-        connect(manualLogin, &QPushButton::clicked, this, [this]() {
-            this->stacked->setCurrentWidget(this->manualLoginPage);
-        });
-        layout->addWidget(manualLogin);
-        stacked->addWidget(certErrorPage);
-    }
-    {
-        webviewPage = new QWidget(this);
-        QVBoxLayout *layout = new QVBoxLayout(webviewPage);
-        webView = new QWebEngineView(this);
-        auto label = new QLabel(tr("Information about Security: This Launcher is not Google Play Certified and never will be supported by Google. This Launcher stores your Google Play access token unencrypted on your disk."), this);
-        label->setWordWrap(true);
-        layout->addWidget(label);
-        layout->setStretchFactor(label, 0);
-        auto manualLogin = new QPushButton("Manual login", this);
-        connect(manualLogin, &QPushButton::clicked, this, [this]() {
-            this->stacked->setCurrentWidget(this->manualLoginPage);
-        });
-        layout->addWidget(manualLogin);
-        layout->addWidget(webView);
-        layout->setStretchFactor(webView, 1);
-    }
-    auto webPage = new WebPage(this);
-    connect(webPage, &WebPage::verifyCertificateError, this, [this](QString url, QString errormsg) {
-        this->certificateError = true;
-        return this->ignoreCertificateError;
-    });
-    webView->setPage(webPage);
-    stacked->addWidget(webviewPage);
-    setupWebBrowser();
-    webView->setUrl(QUrl(DEFAULT_URL));
 #else
     stacked->setCurrentWidget(this->manualLoginPage);
 #endif
